@@ -13,14 +13,14 @@ class Bandit:
             raise ValueError("At least one arm is required.")
         self._arms: List[BaseArm] = list(arms)
         # Build per-bandit labels without mutating arms; auto-name unnamed, reject duplicates
-        self._labels: List[str] = []
-        self._name_to_index: Dict[str, int] = {}
+        self._arm_labels: List[str] = []
+        self._label_to_index: Dict[str, int] = {}
         for idx, arm in enumerate(self._arms):
             label = arm.name or f"arm{idx}"
-            if label in self._name_to_index:
-                raise ValueError(f"Duplicate arm label '{label}' at indices {self._name_to_index[label]} and {idx}")
-            self._labels.append(label)
-            self._name_to_index[label] = idx
+            if label in self._label_to_index:
+                raise ValueError(f"Duplicate arm label '{label}' at indices {self._label_to_index[label]} and {idx}")
+            self._arm_labels.append(label)
+            self._label_to_index[label] = idx
         self._rng = np.random.default_rng(seed)
         self._step = 0
 
@@ -38,15 +38,19 @@ class Bandit:
         reward, info = self._arms[arm_index].sample(self._rng)
         # Structural metadata always set by the bandit
         info["arm_index"] = arm_index
-        info["arm_name"] = self._labels[arm_index]
+        info["arm_label"] = self._arm_labels[arm_index]
         self._step += 1
         return reward, info
 
+    def __repr__(self) -> str:
+        labels = ", ".join(self._arm_labels)
+        return f"Bandit(n_arms={self.n_arms}, labels=[{labels}])"
+
     def _resolve_action(self, action: Action) -> int:
         if isinstance(action, str):
-            if action not in self._name_to_index:
+            if action not in self._label_to_index:
                 raise ValueError(f"Unknown arm name '{action}'")
-            return self._name_to_index[action]
+            return self._label_to_index[action]
         # action is expected to be an int
         if action < 0 or action >= self.n_arms:
             raise ValueError(f"Invalid arm {action} (expected 0–{self.n_arms - 1})")

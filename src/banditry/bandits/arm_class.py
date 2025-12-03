@@ -21,6 +21,9 @@ class BaseArm(ABC):
     def sample(self, rng: np.random.Generator) -> Sample:
         """Draw a reward from this arm."""
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(name={self._name!r}, expected_reward={self.expected_reward():.4g})"
+
 
 class BernoulliArm(BaseArm):
     def __init__(self, p: float, name: Optional[str] = None):
@@ -35,6 +38,9 @@ class BernoulliArm(BaseArm):
 
     def expected_reward(self) -> Reward:
         return self._p
+
+    def __repr__(self) -> str:
+        return f"BernoulliArm(p={self._p}, name={self._name!r})"
 
 
 class GaussianArm(BaseArm):
@@ -51,3 +57,6 @@ class GaussianArm(BaseArm):
 
     def expected_reward(self) -> Reward:
         return self._mu
+
+    def __repr__(self) -> str:
+        return f"GaussianArm(mean={self._mu}, std={self._sigma}, name={self._name!r})"
