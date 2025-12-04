@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from banditry.bandits import BernoulliArm, GaussianArm
+from banditry.bandits import BernoulliArm, GaussianArm, CustomArm
 
 
 def test_bernoulli_arm_sample_and_expected_reward():
@@ -39,3 +39,23 @@ def test_gaussian_invalid_std():
         GaussianArm(mean=0.0, std=0.0)
     with pytest.raises(ValueError):
         GaussianArm(mean=0.0, std=-1.0)
+
+
+def test_custom_arm_with_and_without_expected_reward():
+    rng = np.random.default_rng(0)
+
+    def sampler(r):
+        return r.normal()
+
+    arm_unknown = CustomArm(sample_fn=sampler, expected_reward_value=None, name="u")
+    reward, info = arm_unknown.sample(rng)
+    assert isinstance(reward, float)
+    assert info["type"] == "custom"
+    assert info["name"] == "u"
+    with pytest.raises(NotImplementedError):
+        arm_unknown.expected_reward()
+
+    arm_known = CustomArm(sample_fn=sampler, expected_reward_value=0.5, name="k")
+    reward2, info2 = arm_known.sample(rng)
+    assert isinstance(reward2, float)
+    assert arm_known.expected_reward() == pytest.approx(0.5)

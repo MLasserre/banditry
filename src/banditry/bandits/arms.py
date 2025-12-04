@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Callable, Optional, Union, Tuple
 import numpy as np
 from .._types import Reward, Sample
 
@@ -60,3 +60,42 @@ class GaussianArm(BaseArm):
 
     def __repr__(self) -> str:
         return f"GaussianArm(mean={self._mu}, std={self._sigma}, name={self._name!r})"
+
+
+class CustomArm(BaseArm):
+    """
+    Arm backed by a user-provided sampling function.
+
+    sample_fn must accept an rng and return either:
+      - a reward (float)
+      - or a tuple (reward, info_dict)
+    """
+
+    def __init__(
+        self,
+        sample_fn: Callable[[np.random.Generator], Union[Reward, Tuple[Reward, dict]]],
+        expected_reward_value: Optional[float] = None,
+        name: Optional[str] = None,
+    ):
+        super().__init__(name)
+        self._sample_fn = sample_fn
+        self._expected_reward_value = expected_reward_value
+
+    def sample(self, rng: np.random.Generator) -> Sample:
+        result = self._sample_fn(rng)
+        if isinstance(result, tuple) and len(result) == 2:
+            reward, info = result
+        else:
+            reward, info = result, {}
+        info.setdefault("type", "custom")
+        info.setdefault("name", self._name)
+        return float(reward), info
+
+    def expected_reward(self) -> Reward:
+        if self._expected_reward_value is None:
+            raise NotImplementedError("expected_reward is not available for this CustomArm")
+        return float(self._expected_reward_value)
+
+    def __repr__(self) -> str:
+        er = self._expected_reward_value
+        return f"CustomArm(name={self._name!r}, expected_reward={er!r})"
