@@ -1,5 +1,5 @@
-from .bandits.arm_class import BaseArm, BernoulliArm, GaussianArm
-from .bandits.bandit_class import Bandit
+from .bandits.arms import BaseArm, BernoulliArm, GaussianArm
+from .bandits.bandit import Bandit
 from .bandits.standard import BernoulliBandit, GaussianBandit
 from .policies.epsilon_greedy_policy import EpsilonGreedyPolicy
 

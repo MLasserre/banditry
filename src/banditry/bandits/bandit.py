@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Sequence
 import numpy as np
 
 from .._types import Action, Sample
-from .arm_class import BaseArm
+from .arms import BaseArm
 
 
 class Bandit:

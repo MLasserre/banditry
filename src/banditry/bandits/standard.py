@@ -1,7 +1,7 @@
 from typing import Optional, Sequence, Union, List
 
-from .arm_class import BernoulliArm, GaussianArm, BaseArm
-from .bandit_class import Bandit
+from .arms import BernoulliArm, GaussianArm, BaseArm
+from .bandit import Bandit
 
 
 class BernoulliBandit(Bandit):
