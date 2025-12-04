@@ -22,15 +22,15 @@ class Bandit:
             self._arm_labels.append(label)
             self._label_to_index[label] = idx
         self._rng = np.random.default_rng(seed)
-        self._step = 0
+        self._num_pulls = 0
 
     @property
     def n_arms(self) -> int:
         return len(self._arms)
 
     @property
-    def step(self) -> int:
-        return self._step
+    def num_pulls(self) -> int:
+        return self._num_pulls
 
     def pull(self, action: Action) -> Sample:
         """Sample reward/info from the chosen arm."""
@@ -39,12 +39,12 @@ class Bandit:
         # Structural metadata always set by the bandit
         info["arm_index"] = arm_index
         info["arm_label"] = self._arm_labels[arm_index]
-        self._step += 1
+        self._num_pulls += 1
         return reward, info
 
     def __repr__(self) -> str:
         labels = ", ".join(self._arm_labels)
-        return f"Bandit(n_arms={self.n_arms}, labels=[{labels}])"
+        return f"Bandit(n_arms={self.n_arms}, num_pulls={self._num_pulls}, labels=[{labels}])"
 
     def _resolve_action(self, action: Action) -> int:
         if isinstance(action, str):
