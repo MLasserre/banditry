@@ -6,4 +6,5 @@ Multi-armed bandit toolkit for building bandits (Bernoulli, Gaussian, custom) an
 :maxdepth: 1
 
 quickstart
+notebooks/sutton_barto
 ```

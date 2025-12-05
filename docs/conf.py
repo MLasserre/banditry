@@ -11,15 +11,25 @@ copyright = f"{year}, {author}"
 sys.path.insert(0, os.path.abspath("../src"))
 
 extensions = [
-    "myst_parser",
+    "myst_nb",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
 ]
 
-myst_enable_extensions = ["colon_fence"]
+myst_enable_extensions = ["colon_fence", "dollarmath"]
+
+# Execute notebooks as needed during doc build
+nb_execution_mode = "auto"
+
+exclude_patterns = [
+    "_build",
+    "**/_build/**",
+    "jupyter_execute/*",
+    "**/jupyter_execute/*",
+    "**/.ipynb_checkpoints",
+]
 
 templates_path = ["_templates"]
-exclude_patterns: list[str] = []
 
 html_theme = "furo"
 html_static_path = ["_static"]

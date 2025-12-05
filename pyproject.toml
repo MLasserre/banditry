@@ -19,6 +19,8 @@ docs = [
     "sphinx>=7.2",
     "myst-parser>=2.0",
     "furo>=2024.1.29",
+    "myst-nb>=1.0",
+    "matplotlib>=3.8",
 ]
 
 [tool.hatch.build.targets.wheel]
