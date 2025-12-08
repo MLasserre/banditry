@@ -38,6 +38,11 @@ class Bandit:
     def num_pulls(self) -> int:
         return self._num_pulls
 
+    def arm_num_pulls(self, action: Action) -> int:
+        """Return the number of pulls for a given arm (by index or label)."""
+        arm_index = self._resolve_action(action)
+        return self._arms[arm_index].num_pulls
+
     def pull(self, action: Action) -> Sample:
         """Sample reward/info from the chosen arm."""
         arm_index = self._resolve_action(action)
