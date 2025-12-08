@@ -8,10 +8,18 @@ class BaseArm(ABC):
     def __init__(self, name: Optional[str] = None):
         # Name can be supplied by the user; otherwise stays None and the bandit will assign a label.
         self._name = name
+        self._num_pulls = 0
 
     @property
     def name(self) -> Optional[str]:
         return self._name
+
+    @property
+    def num_pulls(self) -> int:
+        return self._num_pulls
+
+    def _record_pull(self) -> None:
+        self._num_pulls += 1
 
     @abstractmethod
     def expected_reward(self) -> Reward:

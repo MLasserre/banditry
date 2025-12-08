@@ -45,6 +45,8 @@ class Bandit:
         # Structural metadata always set by the bandit
         info["arm_index"] = arm_index
         info["arm_label"] = self._arm_labels[arm_index]
+        # Track pulls per arm
+        self._arms[arm_index]._record_pull()
         self._num_pulls += 1
         if self._evolve_fn is not None:
             # Allow bandit-level evolution (e.g., restless/non-stationary arms)

@@ -18,6 +18,8 @@ def test_default_labels_are_assigned_and_unique():
     assert bandit.num_pulls == 2
     assert reward0 in (0.0, 1.0)
     assert reward1 in (0.0, 1.0)
+    assert arms[0].num_pulls == 1
+    assert arms[1].num_pulls == 1
 
 
 def test_named_arms_and_duplicate_label_error():
