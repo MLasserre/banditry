@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Sequence
+from typing import Callable, Dict, List, Optional, Sequence
 import numpy as np
 
 from .._types import Action, Sample
@@ -8,7 +8,12 @@ from .arms import BaseArm
 class Bandit:
     """A multi-armed bandit that delegates sampling to its arms."""
 
-    def __init__(self, arms: Sequence[BaseArm], seed: Optional[int] = None):
+    def __init__(
+        self,
+        arms: Sequence[BaseArm],
+        seed: Optional[int] = None,
+        evolve_fn: Optional[Callable[[np.random.Generator, List[BaseArm], int, int, dict], None]] = None,
+    ):
         if not arms:
             raise ValueError("At least one arm is required.")
         self._arms: List[BaseArm] = list(arms)
@@ -23,6 +28,7 @@ class Bandit:
             self._label_to_index[label] = idx
         self._rng = np.random.default_rng(seed)
         self._num_pulls = 0
+        self._evolve_fn = evolve_fn
 
     @property
     def n_arms(self) -> int:
@@ -40,6 +46,9 @@ class Bandit:
         info["arm_index"] = arm_index
         info["arm_label"] = self._arm_labels[arm_index]
         self._num_pulls += 1
+        if self._evolve_fn is not None:
+            # Allow bandit-level evolution (e.g., restless/non-stationary arms)
+            self._evolve_fn(self._rng, self._arms, self._num_pulls, arm_index, info)
         return reward, info
 
     def __repr__(self) -> str:

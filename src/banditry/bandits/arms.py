@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Union, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 import numpy as np
 from .._types import Reward, Sample
 
@@ -73,28 +73,51 @@ class CustomArm(BaseArm):
 
     def __init__(
         self,
-        sample_fn: Callable[[np.random.Generator], Union[Reward, Tuple[Reward, dict]]],
-        expected_reward_value: Optional[float] = None,
+        sample_fn: Callable[[np.random.Generator, Dict[str, Any]], Union[Reward, Tuple[Reward, dict]]],
+        expected_reward_value: Optional[Union[float, Callable[[Dict[str, Any]], float]]] = None,
+        update_fn: Optional[Callable[[np.random.Generator, Dict[str, Any], int], Dict[str, Any]]] = None,
+        initial_state: Optional[Dict[str, Any]] = None,
         name: Optional[str] = None,
     ):
         super().__init__(name)
         self._sample_fn = sample_fn
         self._expected_reward_value = expected_reward_value
+        self._update_fn = update_fn
+        self._state: Dict[str, Any] = initial_state.copy() if initial_state is not None else {}
+        self._step = 0
+
+    def _call_sample(self, rng: np.random.Generator):
+        # Allow sample_fn to accept (rng, state) or just (rng)
+        try:
+            return self._sample_fn(rng, self._state)
+        except TypeError:
+            return self._sample_fn(rng)
 
     def sample(self, rng: np.random.Generator) -> Sample:
-        result = self._sample_fn(rng)
+        result = self._call_sample(rng)
         if isinstance(result, tuple) and len(result) == 2:
             reward, info = result
         else:
             reward, info = result, {}
         info.setdefault("type", "custom")
         info.setdefault("name", self._name)
+        info.setdefault("stationary", self.is_stationary)
+        # Apply non-stationary update if any
+        if self._update_fn is not None:
+            self._state = self._update_fn(rng, self._state, self._step)
+        self._step += 1
         return float(reward), info
 
     def expected_reward(self) -> Reward:
         if self._expected_reward_value is None:
             raise NotImplementedError("expected_reward is not available for this CustomArm")
+        if callable(self._expected_reward_value):
+            return float(self._expected_reward_value(self._state))
         return float(self._expected_reward_value)
+
+    @property
+    def is_stationary(self) -> bool:
+        return self._update_fn is None
 
     def __repr__(self) -> str:
         er = self._expected_reward_value

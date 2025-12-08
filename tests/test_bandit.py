@@ -35,6 +35,27 @@ def test_named_arms_and_duplicate_label_error():
         Bandit([BernoulliArm(0.5, name="dup"), BernoulliArm(0.5, name="dup")])
 
 
+def test_bandit_evolve_fn_updates_other_arms():
+    # Evolve function increments a counter on each pull
+    class CounterArm(BernoulliArm):
+        def __init__(self, p, name=None):
+            super().__init__(p, name)
+            self.count = 0
+
+    def evolve(rng, arms, num_pulls, last_arm_idx, info):
+        for arm in arms:
+            if hasattr(arm, "count"):
+                arm.count += 1
+
+    a0 = CounterArm(1.0, name="A")
+    a1 = CounterArm(0.0, name="B")
+    bandit = Bandit([a0, a1], seed=0, evolve_fn=evolve)
+    bandit.pull("A")
+    bandit.pull("B")
+    assert a0.count == 2
+    assert a1.count == 2
+
+
 def test_repr_contains_labels_and_counts():
     arms = [GaussianArm(0.0, 1.0, name="g0"), GaussianArm(1.0, 1.0, name="g1")]
     bandit = Bandit(arms, seed=42)
