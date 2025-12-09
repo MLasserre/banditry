@@ -6,6 +6,8 @@ from .bandits.arms import (
     PoissonArm,
     UniformArm,
     BetaArm,
+    DriftingGaussianArm,
+    PiecewiseBernoulliArm,
     CustomArm,
 )
 from .bandits.bandit import Bandit
@@ -20,6 +22,8 @@ __all__ = [
     "PoissonArm",
     "UniformArm",
     "BetaArm",
+    "DriftingGaussianArm",
+    "PiecewiseBernoulliArm",
     "CustomArm",
     "Bandit",
     "BernoulliBandit",

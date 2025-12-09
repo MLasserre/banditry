@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Union, Sequence
 import numpy as np
 from .._types import Reward, Sample
 
@@ -142,6 +142,77 @@ class BetaArm(BaseArm):
 
     def __repr__(self) -> str:
         return f"BetaArm(alpha={self._alpha}, beta={self._beta}, name={self._name!r})"
+
+
+class DriftingGaussianArm(BaseArm):
+    def __init__(self, mean: float, std: float, drift_std: float, name: Optional[str] = None):
+        super().__init__(name)
+        if std <= 0:
+            raise ValueError("std must be positive.")
+        if drift_std < 0:
+            raise ValueError("drift_std must be non-negative.")
+        self._mu = float(mean)
+        self._sigma = float(std)
+        self._drift_std = float(drift_std)
+
+    def sample(self, rng: np.random.Generator) -> Sample:
+        reward = rng.normal(self._mu, self._sigma)
+        info = {"type": "Gaussian", "mean": self._mu, "std": self._sigma, "name": self._name, "stationary": False}
+        # Apply random walk drift on the mean
+        if self._drift_std > 0:
+            self._mu += rng.normal(0.0, self._drift_std)
+        return reward, info
+
+    def expected_reward(self) -> Reward:
+        return self._mu
+
+    def __repr__(self) -> str:
+        return f"DriftingGaussianArm(mean={self._mu}, std={self._sigma}, drift_std={self._drift_std}, name={self._name!r})"
+
+
+class PiecewiseBernoulliArm(BaseArm):
+    """
+    Bernoulli arm with scheduled probability changes.
+
+    Schedule is a list of (pull_count, p) pairs. Progression uses BaseArm.num_pulls,
+    which is incremented by Bandit.pull. Calling sample directly will not advance
+    the schedule unless num_pulls is managed externally.
+    """
+    def __init__(self, schedule: Sequence[Tuple[int, float]], name: Optional[str] = None):
+        super().__init__(name)
+        if not schedule:
+            raise ValueError("schedule must not be empty.")
+        # Sort by step and validate probabilities
+        sorted_sched = sorted(schedule, key=lambda x: x[0])
+        for step, p in sorted_sched:
+            if step < 0:
+                raise ValueError("schedule steps must be non-negative.")
+            if not (0.0 <= p <= 1.0):
+                raise ValueError("probabilities must be in [0,1].")
+        self._schedule = sorted_sched
+        self._schedule_idx = 0
+        self._p = float(sorted_sched[0][1])
+
+    def _maybe_advance_schedule(self):
+        # Use current num_pulls to determine if we should move to next p
+        while (
+            self._schedule_idx + 1 < len(self._schedule)
+            and self.num_pulls >= self._schedule[self._schedule_idx + 1][0]
+        ):
+            self._schedule_idx += 1
+            self._p = float(self._schedule[self._schedule_idx][1])
+
+    def sample(self, rng: np.random.Generator) -> Sample:
+        self._maybe_advance_schedule()
+        r = float(rng.binomial(1, self._p))
+        info = {"type": "bernoulli", "p": self._p, "name": self._name, "stationary": False}
+        return r, info
+
+    def expected_reward(self) -> Reward:
+        return self._p
+
+    def __repr__(self) -> str:
+        return f"PiecewiseBernoulliArm(schedule={self._schedule}, name={self._name!r})"
 
 
 class CustomArm(BaseArm):

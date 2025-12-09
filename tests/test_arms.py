@@ -8,7 +8,10 @@ from banditry.bandits import (
     PoissonArm,
     UniformArm,
     BetaArm,
+    DriftingGaussianArm,
+    PiecewiseBernoulliArm,
     CustomArm,
+    Bandit,
 )
 
 
@@ -130,3 +133,27 @@ def test_beta_arm():
     assert info["alpha"] == 2.0
     assert info["beta"] == 3.0
     assert arm.expected_reward() == pytest.approx(2.0 / 5.0)
+
+
+def test_drifting_gaussian_arm_updates_mean():
+    rng = np.random.default_rng(5)
+    arm = DriftingGaussianArm(mean=0.0, std=1.0, drift_std=0.1, name="dg")
+    mu_before = arm.expected_reward()
+    _, info = arm.sample(rng)
+    assert info["stationary"] is False
+    mu_after = arm.expected_reward()
+    assert mu_after != mu_before  # drift applied
+
+
+def test_piecewise_bernoulli_arm_schedule():
+    # p=0.1 for pulls <2, then 0.9 afterwards
+    arm = PiecewiseBernoulliArm(schedule=[(0, 0.1), (2, 0.9)], name="pw")
+    bandit = Bandit([arm], seed=6)
+    # First two pulls use p=0.1
+    _, info1 = bandit.pull(0)
+    assert info1["p"] == 0.1
+    _, info2 = bandit.pull(0)
+    assert info2["p"] == 0.1
+    # Third pull uses updated p=0.9
+    _, info3 = bandit.pull(0)
+    assert info3["p"] == 0.9
