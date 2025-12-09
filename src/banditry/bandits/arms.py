@@ -70,6 +70,80 @@ class GaussianArm(BaseArm):
         return f"GaussianArm(mean={self._mu}, std={self._sigma}, name={self._name!r})"
 
 
+class ExponentialArm(BaseArm):
+    def __init__(self, scale: float, name: Optional[str] = None):
+        super().__init__(name)
+        if scale <= 0:
+            raise ValueError("scale must be positive.")
+        self._scale = float(scale)
+
+    def sample(self, rng: np.random.Generator) -> Sample:
+        reward = rng.exponential(self._scale)
+        return reward, {"type": "exponential", "scale": self._scale, "name": self._name}
+
+    def expected_reward(self) -> Reward:
+        return self._scale
+
+    def __repr__(self) -> str:
+        return f"ExponentialArm(scale={self._scale}, name={self._name!r})"
+
+
+class PoissonArm(BaseArm):
+    def __init__(self, rate: float, name: Optional[str] = None):
+        super().__init__(name)
+        if rate <= 0:
+            raise ValueError("rate must be positive.")
+        self._rate = float(rate)
+
+    def sample(self, rng: np.random.Generator) -> Sample:
+        reward = float(rng.poisson(self._rate))
+        return reward, {"type": "poisson", "rate": self._rate, "name": self._name}
+
+    def expected_reward(self) -> Reward:
+        return self._rate
+
+    def __repr__(self) -> str:
+        return f"PoissonArm(rate={self._rate}, name={self._name!r})"
+
+
+class UniformArm(BaseArm):
+    def __init__(self, low: float, high: float, name: Optional[str] = None):
+        super().__init__(name)
+        if high <= low:
+            raise ValueError("high must be greater than low.")
+        self._low = float(low)
+        self._high = float(high)
+
+    def sample(self, rng: np.random.Generator) -> Sample:
+        reward = float(rng.uniform(self._low, self._high))
+        return reward, {"type": "uniform", "low": self._low, "high": self._high, "name": self._name}
+
+    def expected_reward(self) -> Reward:
+        return (self._low + self._high) / 2.0
+
+    def __repr__(self) -> str:
+        return f"UniformArm(low={self._low}, high={self._high}, name={self._name!r})"
+
+
+class BetaArm(BaseArm):
+    def __init__(self, alpha: float, beta: float, name: Optional[str] = None):
+        super().__init__(name)
+        if alpha <= 0 or beta <= 0:
+            raise ValueError("alpha and beta must be positive.")
+        self._alpha = float(alpha)
+        self._beta = float(beta)
+
+    def sample(self, rng: np.random.Generator) -> Sample:
+        reward = float(rng.beta(self._alpha, self._beta))
+        return reward, {"type": "beta", "alpha": self._alpha, "beta": self._beta, "name": self._name}
+
+    def expected_reward(self) -> Reward:
+        return self._alpha / (self._alpha + self._beta)
+
+    def __repr__(self) -> str:
+        return f"BetaArm(alpha={self._alpha}, beta={self._beta}, name={self._name!r})"
+
+
 class CustomArm(BaseArm):
     """
     Arm backed by a user-provided sampling function.
