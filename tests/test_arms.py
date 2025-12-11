@@ -85,11 +85,12 @@ def test_custom_arm_non_stationary_update():
         return new_state
 
     arm = CustomArm(sample_fn=sampler, update_fn=updater, expected_reward_value=lambda st: st.get("mu", 0.0), initial_state={"mu": 0.0}, name="drift")
-    _, info1 = arm.sample(rng)
+    bandit = Bandit([arm], seed=0)
+    _, info1 = bandit.pull(0)
     assert info1["stationary"] is False
     mu_after_first = arm.expected_reward()
     assert mu_after_first == pytest.approx(0.1)
-    arm.sample(rng)
+    bandit.pull(0)
     assert arm.expected_reward() == pytest.approx(0.2)
 
 
@@ -136,17 +137,17 @@ def test_beta_arm():
 
 
 def test_drifting_gaussian_arm_updates_mean():
-    rng = np.random.default_rng(5)
     arm = DriftingGaussianArm(mean=0.0, std=1.0, drift_std=0.1, name="dg")
     mu_before = arm.expected_reward()
-    _, info = arm.sample(rng)
+    bandit = Bandit([arm], seed=5)
+    _, info = bandit.pull(0)
     assert info["stationary"] is False
     mu_after = arm.expected_reward()
     assert mu_after != mu_before  # drift applied
 
 
 def test_piecewise_bernoulli_arm_schedule():
-    # p=0.1 for pulls <2, then 0.9 afterwards
+    # p=0.1 for first two pulls, then 0.9 afterwards
     arm = PiecewiseBernoulliArm(schedule=[(0, 0.1), (2, 0.9)], name="pw")
     bandit = Bandit([arm], seed=6)
     # First two pulls use p=0.1

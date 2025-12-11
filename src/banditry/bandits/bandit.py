@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 import numpy as np
 
 from .._types import Action, Sample
@@ -6,13 +6,18 @@ from .arms import BaseArm
 
 
 class Bandit:
-    """A multi-armed bandit that delegates sampling to its arms."""
+    """
+    A multi-armed bandit that delegates sampling to its arms.
+
+    Set restless=True to evolve every arm each bandit step (restless case); by
+    default only the pulled arm advances (rested case).
+    """
 
     def __init__(
         self,
         arms: Sequence[BaseArm],
         seed: Optional[int] = None,
-        evolve_fn: Optional[Callable[[np.random.Generator, List[BaseArm], int, int, dict], None]] = None,
+        restless: bool = False,
     ):
         if not arms:
             raise ValueError("At least one arm is required.")
@@ -28,7 +33,8 @@ class Bandit:
             self._label_to_index[label] = idx
         self._rng = np.random.default_rng(seed)
         self._num_pulls = 0
-        self._evolve_fn = evolve_fn
+        self._restless = restless
+        self._step = 0
 
     @property
     def n_arms(self) -> int:
@@ -53,9 +59,16 @@ class Bandit:
         # Track pulls per arm
         self._arms[arm_index]._record_pull()
         self._num_pulls += 1
-        if self._evolve_fn is not None:
-            # Allow bandit-level evolution (e.g., restless/non-stationary arms)
-            self._evolve_fn(self._rng, self._arms, self._num_pulls, arm_index, info)
+        # Advance global time after sampling; evolution applies to future pulls
+        self._step += 1
+        if self._restless:
+            for arm in self._arms:
+                if not arm.is_stationary:
+                    arm.evolve(self._rng, self._step)
+        else:
+            arm = self._arms[arm_index]
+            if not arm.is_stationary:
+                arm.evolve(self._rng, self._step)
         return reward, info
 
     def __repr__(self) -> str:

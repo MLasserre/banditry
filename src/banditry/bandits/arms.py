@@ -29,6 +29,19 @@ class BaseArm(ABC):
     def sample(self, rng: np.random.Generator) -> Sample:
         """Draw a reward from this arm."""
 
+    @property
+    def is_stationary(self) -> bool:
+        """True if the arm does not evolve over time."""
+        return True
+
+    def evolve(self, rng: np.random.Generator, step: int) -> None:
+        """
+        Optional evolution hook for non-stationary arms.
+
+        Default behavior is stationary; subclasses override to mutate state.
+        """
+        return None
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self._name!r}, expected_reward={self.expected_reward():.4g})"
 
@@ -158,10 +171,16 @@ class DriftingGaussianArm(BaseArm):
     def sample(self, rng: np.random.Generator) -> Sample:
         reward = rng.normal(self._mu, self._sigma)
         info = {"type": "Gaussian", "mean": self._mu, "std": self._sigma, "name": self._name, "stationary": False}
-        # Apply random walk drift on the mean
+        return reward, info
+
+    def evolve(self, rng: np.random.Generator, step: int) -> None:
+        # Random walk drift on the mean
         if self._drift_std > 0:
             self._mu += rng.normal(0.0, self._drift_std)
-        return reward, info
+
+    @property
+    def is_stationary(self) -> bool:
+        return False
 
     def expected_reward(self) -> Reward:
         return self._mu
@@ -174,9 +193,8 @@ class PiecewiseBernoulliArm(BaseArm):
     """
     Bernoulli arm with scheduled probability changes.
 
-    Schedule is a list of (pull_count, p) pairs. Progression uses BaseArm.num_pulls,
-    which is incremented by Bandit.pull. Calling sample directly will not advance
-    the schedule unless num_pulls is managed externally.
+    Schedule is a list of (time_step, p) pairs. Progression uses the bandit's
+    global step (starting at 1 on the first pull) and is driven via BaseArm.evolve.
     """
     def __init__(self, schedule: Sequence[Tuple[int, float]], name: Optional[str] = None):
         super().__init__(name)
@@ -193,20 +211,27 @@ class PiecewiseBernoulliArm(BaseArm):
         self._schedule_idx = 0
         self._p = float(sorted_sched[0][1])
 
-    def _maybe_advance_schedule(self):
-        # Use current num_pulls to determine if we should move to next p
+    def _maybe_advance_schedule(self, step: int):
+        # Use provided global time to determine if we should move to next p
         while (
             self._schedule_idx + 1 < len(self._schedule)
-            and self.num_pulls >= self._schedule[self._schedule_idx + 1][0]
+            and step >= self._schedule[self._schedule_idx + 1][0]
         ):
             self._schedule_idx += 1
             self._p = float(self._schedule[self._schedule_idx][1])
 
     def sample(self, rng: np.random.Generator) -> Sample:
-        self._maybe_advance_schedule()
         r = float(rng.binomial(1, self._p))
         info = {"type": "bernoulli", "p": self._p, "name": self._name, "stationary": False}
         return r, info
+
+    def evolve(self, rng: np.random.Generator, step: int) -> None:
+        # Advance schedule based on elapsed bandit time
+        self._maybe_advance_schedule(step)
+
+    @property
+    def is_stationary(self) -> bool:
+        return False
 
     def expected_reward(self) -> Reward:
         return self._p
@@ -237,7 +262,6 @@ class CustomArm(BaseArm):
         self._expected_reward_value = expected_reward_value
         self._update_fn = update_fn
         self._state: Dict[str, Any] = initial_state.copy() if initial_state is not None else {}
-        self._step = 0
 
     def _call_sample(self, rng: np.random.Generator):
         # Allow sample_fn to accept (rng, state) or just (rng)
@@ -255,11 +279,12 @@ class CustomArm(BaseArm):
         info.setdefault("type", "custom")
         info.setdefault("name", self._name)
         info.setdefault("stationary", self.is_stationary)
-        # Apply non-stationary update if any
-        if self._update_fn is not None:
-            self._state = self._update_fn(rng, self._state, self._step)
-        self._step += 1
         return float(reward), info
+
+    def evolve(self, rng: np.random.Generator, step: int) -> None:
+        # Allow the custom update_fn to run under bandit control
+        if self._update_fn is not None:
+            self._state = self._update_fn(rng, self._state, step)
 
     def expected_reward(self) -> Reward:
         if self._expected_reward_value is None:
