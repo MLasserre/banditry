@@ -3,10 +3,12 @@ import pytest
 from banditry.bandits import (
     BernoulliBandit,
     GaussianBandit,
+    DriftingGaussianBandit,
     ExponentialBandit,
     PoissonBandit,
     UniformBandit,
     BetaBandit,
+    PiecewiseBernoulliBandit,
 )
 
 
@@ -50,6 +52,14 @@ def test_gaussian_bandit_length_mismatch():
         GaussianBandit([0.0], stds=[0.5, 0.6])
 
 
+def test_drifting_gaussian_bandit_builds_with_broadcast():
+    bandit = DriftingGaussianBandit([0.0, 1.0], stds=0.5, drift_stds=[0.1, 0.2], labels=["d0", "d1"], seed=0)
+    assert bandit.n_arms == 2
+    _, info0 = bandit.pull("d0")
+    assert info0["arm_label"] == "d0"
+    assert info0["type"] == "Gaussian"
+
+
 def test_exponential_bandit():
     bandit = ExponentialBandit([1.0, 2.0], labels=["e0", "e1"], seed=0)
     assert bandit.n_arms == 2
@@ -78,3 +88,13 @@ def test_beta_bandit():
     _, info = bandit.pull("b0")
     assert info["arm_label"] == "b0"
     assert info["type"] == "beta"
+
+
+def test_piecewise_bernoulli_bandit_schedule():
+    bandit = PiecewiseBernoulliBandit([[(0, 0.1), (2, 0.9)]], labels=["pw"], seed=0)
+    _, info1 = bandit.pull("pw")
+    assert info1["p"] == 0.1
+    _, info2 = bandit.pull("pw")
+    assert info2["p"] == 0.1
+    _, info3 = bandit.pull("pw")
+    assert info3["p"] == 0.9

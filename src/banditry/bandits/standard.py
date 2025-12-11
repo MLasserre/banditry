@@ -1,6 +1,16 @@
-from typing import Optional, Sequence, Union, List
+from typing import Optional, Sequence, Union, List, Tuple
 
-from .arms import BernoulliArm, GaussianArm, ExponentialArm, PoissonArm, UniformArm, BetaArm, BaseArm
+from .arms import (
+    BernoulliArm,
+    GaussianArm,
+    ExponentialArm,
+    PoissonArm,
+    UniformArm,
+    BetaArm,
+    DriftingGaussianArm,
+    PiecewiseBernoulliArm,
+    BaseArm,
+)
 from .bandit import Bandit
 
 
@@ -48,6 +58,48 @@ class GaussianBandit(Bandit):
             name = labels[idx] if labels is not None else None
             arms.append(GaussianArm(mu, sigma, name=name))
         super().__init__(arms, seed=seed)
+
+
+class DriftingGaussianBandit(Bandit):
+    """Convenience bandit composed of drifting Gaussian arms."""
+
+    def __init__(
+        self,
+        means: Sequence[float],
+        stds: Optional[Union[float, Sequence[float]]] = 1.0,
+        drift_stds: Optional[Union[float, Sequence[float]]] = 0.1,
+        labels: Optional[Sequence[str]] = None,
+        seed: Optional[int] = None,
+        restless: bool = False,
+    ):
+        if not means:
+            raise ValueError("At least one mean is required.")
+        if labels is not None and len(labels) != len(means):
+            raise ValueError(f"labels must have length {len(means)}, got {len(labels)}")
+
+        # Broadcast stds
+        if stds is None or isinstance(stds, (int, float)):
+            std_value = 1.0 if stds is None else float(stds)
+            std_list = [std_value] * len(means)
+        else:
+            if len(stds) != len(means):
+                raise ValueError(f"stds must have length {len(means)}, got {len(stds)}")
+            std_list = list(stds)
+
+        # Broadcast drift_stds
+        if drift_stds is None or isinstance(drift_stds, (int, float)):
+            drift_value = 0.0 if drift_stds is None else float(drift_stds)
+            drift_list = [drift_value] * len(means)
+        else:
+            if len(drift_stds) != len(means):
+                raise ValueError(f"drift_stds must have length {len(means)}, got {len(drift_stds)}")
+            drift_list = list(drift_stds)
+
+        arms: List[BaseArm] = []
+        for idx, (mu, sigma, drift) in enumerate(zip(means, std_list, drift_list)):
+            name = labels[idx] if labels is not None else None
+            arms.append(DriftingGaussianArm(mu, sigma, drift, name=name))
+        super().__init__(arms, seed=seed, restless=restless)
 
 
 class ExponentialBandit(Bandit):
@@ -108,3 +160,24 @@ class BetaBandit(Bandit):
             name = labels[idx] if labels is not None else None
             arms.append(BetaArm(a, b, name=name))
         super().__init__(arms, seed=seed)
+
+
+class PiecewiseBernoulliBandit(Bandit):
+    """Convenience bandit composed of piecewise Bernoulli arms."""
+
+    def __init__(
+        self,
+        schedules: Sequence[Sequence[Tuple[int, float]]],
+        labels: Optional[Sequence[str]] = None,
+        seed: Optional[int] = None,
+        restless: bool = False,
+    ):
+        if not schedules:
+            raise ValueError("At least one schedule is required.")
+        if labels is not None and len(labels) != len(schedules):
+            raise ValueError(f"labels must have length {len(schedules)}, got {len(labels)}")
+        arms: List[BaseArm] = []
+        for idx, schedule in enumerate(schedules):
+            name = labels[idx] if labels is not None else None
+            arms.append(PiecewiseBernoulliArm(schedule=schedule, name=name))
+        super().__init__(arms, seed=seed, restless=restless)

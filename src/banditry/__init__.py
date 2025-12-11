@@ -11,8 +11,16 @@ from .bandits.arms import (
     CustomArm,
 )
 from .bandits.bandit import Bandit
-from .bandits.standard import BernoulliBandit, GaussianBandit
-from .bandits.standard import ExponentialBandit, PoissonBandit, UniformBandit, BetaBandit
+from .bandits.standard import (
+    BernoulliBandit,
+    GaussianBandit,
+    DriftingGaussianBandit,
+    ExponentialBandit,
+    PoissonBandit,
+    UniformBandit,
+    BetaBandit,
+    PiecewiseBernoulliBandit,
+)
 from .policies.epsilon_greedy_policy import EpsilonGreedyPolicy
 
 __all__ = [
@@ -29,9 +37,11 @@ __all__ = [
     "Bandit",
     "BernoulliBandit",
     "GaussianBandit",
+    "DriftingGaussianBandit",
     "ExponentialBandit",
     "PoissonBandit",
     "UniformBandit",
     "BetaBandit",
+    "PiecewiseBernoulliBandit",
     "EpsilonGreedyPolicy",
 ]

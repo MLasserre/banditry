@@ -11,7 +11,16 @@ from .arms import (
     CustomArm,
 )
 from .bandit import Bandit
-from .standard import BernoulliBandit, GaussianBandit, ExponentialBandit, PoissonBandit, UniformBandit, BetaBandit
+from .standard import (
+    BernoulliBandit,
+    GaussianBandit,
+    DriftingGaussianBandit,
+    ExponentialBandit,
+    PoissonBandit,
+    UniformBandit,
+    BetaBandit,
+    PiecewiseBernoulliBandit,
+)
 
 __all__ = [
     "BaseArm",
@@ -27,8 +36,10 @@ __all__ = [
     "Bandit",
     "BernoulliBandit",
     "GaussianBandit",
+    "DriftingGaussianBandit",
     "ExponentialBandit",
     "PoissonBandit",
     "UniformBandit",
     "BetaBandit",
+    "PiecewiseBernoulliBandit",
 ]
