@@ -1,4 +1,5 @@
 from typing import Optional, Sequence, Union, List, Tuple
+from .._types import Action
 
 from .arms import (
     BernoulliArm,
@@ -17,7 +18,12 @@ from .bandit import Bandit
 class BernoulliBandit(Bandit):
     """Convenience bandit composed of Bernoulli arms."""
 
-    def __init__(self, probs: Sequence[float], names: Optional[Sequence[str]] = None, seed: Optional[int] = None):
+    def __init__(
+        self,
+        probs: Sequence[float],
+        names: Optional[Sequence[str]] = None,
+        seed: Optional[int] = None,
+    ):
         if not probs:
             raise ValueError("At least one probability is required.")
         if names is not None and len(names) != len(probs):
@@ -71,6 +77,7 @@ class DriftingGaussianBandit(Bandit):
         names: Optional[Sequence[str]] = None,
         seed: Optional[int] = None,
         restless: bool = False,
+        tracked_arms: Optional[Sequence[Action]] = None,
     ):
         if not means:
             raise ValueError("At least one mean is required.")
@@ -99,13 +106,18 @@ class DriftingGaussianBandit(Bandit):
         for idx, (mu, sigma, drift) in enumerate(zip(means, std_list, drift_list)):
             name = names[idx] if names is not None else None
             arms.append(DriftingGaussianArm(mu, sigma, drift, name=name))
-        super().__init__(arms, seed=seed, restless=restless)
+        super().__init__(arms, seed=seed, restless=restless, tracked_arms=tracked_arms)
 
 
 class ExponentialBandit(Bandit):
     """Convenience bandit composed of Exponential arms."""
 
-    def __init__(self, scales: Sequence[float], names: Optional[Sequence[str]] = None, seed: Optional[int] = None):
+    def __init__(
+        self,
+        scales: Sequence[float],
+        names: Optional[Sequence[str]] = None,
+        seed: Optional[int] = None,
+    ):
         if not scales:
             raise ValueError("At least one scale is required.")
         if names is not None and len(names) != len(scales):
@@ -120,7 +132,12 @@ class ExponentialBandit(Bandit):
 class PoissonBandit(Bandit):
     """Convenience bandit composed of Poisson arms."""
 
-    def __init__(self, rates: Sequence[float], names: Optional[Sequence[str]] = None, seed: Optional[int] = None):
+    def __init__(
+        self,
+        rates: Sequence[float],
+        names: Optional[Sequence[str]] = None,
+        seed: Optional[int] = None,
+    ):
         if not rates:
             raise ValueError("At least one rate is required.")
         if names is not None and len(names) != len(rates):
@@ -135,7 +152,13 @@ class PoissonBandit(Bandit):
 class UniformBandit(Bandit):
     """Convenience bandit composed of Uniform arms."""
 
-    def __init__(self, lows: Sequence[float], highs: Sequence[float], names: Optional[Sequence[str]] = None, seed: Optional[int] = None):
+    def __init__(
+        self,
+        lows: Sequence[float],
+        highs: Sequence[float],
+        names: Optional[Sequence[str]] = None,
+        seed: Optional[int] = None,
+    ):
         if not lows or not highs or len(lows) != len(highs):
             raise ValueError("lows and highs must be non-empty and of equal length.")
         if names is not None and len(names) != len(lows):
@@ -150,7 +173,13 @@ class UniformBandit(Bandit):
 class BetaBandit(Bandit):
     """Convenience bandit composed of Beta arms."""
 
-    def __init__(self, alphas: Sequence[float], betas: Sequence[float], names: Optional[Sequence[str]] = None, seed: Optional[int] = None):
+    def __init__(
+        self,
+        alphas: Sequence[float],
+        betas: Sequence[float],
+        names: Optional[Sequence[str]] = None,
+        seed: Optional[int] = None,
+    ):
         if not alphas or not betas or len(alphas) != len(betas):
             raise ValueError("alphas and betas must be non-empty and of equal length.")
         if names is not None and len(names) != len(alphas):
@@ -171,6 +200,7 @@ class PiecewiseBernoulliBandit(Bandit):
         names: Optional[Sequence[str]] = None,
         seed: Optional[int] = None,
         restless: bool = False,
+        tracked_arms: Optional[Sequence[Action]] = None,
     ):
         if not schedules:
             raise ValueError("At least one schedule is required.")
@@ -180,4 +210,4 @@ class PiecewiseBernoulliBandit(Bandit):
         for idx, schedule in enumerate(schedules):
             name = names[idx] if names is not None else None
             arms.append(PiecewiseBernoulliArm(schedule=schedule, name=name))
-        super().__init__(arms, seed=seed, restless=restless)
+        super().__init__(arms, seed=seed, restless=restless, tracked_arms=tracked_arms)

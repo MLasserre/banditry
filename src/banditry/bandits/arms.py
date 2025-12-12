@@ -34,6 +34,14 @@ class BaseArm(ABC):
         """True if the arm does not evolve over time."""
         return True
 
+    def snapshot(self):
+        """
+        Optional hook to expose the current state for history tracking.
+
+        Returning None means there is nothing to record.
+        """
+        return None
+
     def evolve(self, rng: np.random.Generator, step: int) -> None:
         """
         Optional evolution hook for non-stationary arms.
@@ -182,6 +190,9 @@ class DriftingGaussianArm(BaseArm):
     def is_stationary(self) -> bool:
         return False
 
+    def snapshot(self):
+        return {"mean": self._mu, "std": self._sigma}
+
     def expected_reward(self) -> Reward:
         return self._mu
 
@@ -232,6 +243,9 @@ class PiecewiseBernoulliArm(BaseArm):
     @property
     def is_stationary(self) -> bool:
         return False
+
+    def snapshot(self):
+        return {"p": self._p, "schedule_index": self._schedule_idx}
 
     def expected_reward(self) -> Reward:
         return self._p
@@ -285,6 +299,11 @@ class CustomArm(BaseArm):
         # Allow the custom update_fn to run under bandit control
         if self._update_fn is not None:
             self._state = self._update_fn(rng, self._state, step)
+
+    def snapshot(self):
+        if self._update_fn is None:
+            return None
+        return dict(self._state)
 
     def expected_reward(self) -> Reward:
         if self._expected_reward_value is None:

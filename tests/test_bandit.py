@@ -105,3 +105,34 @@ def test_restless_bandit_advances_piecewise_schedule_without_pull():
     bandit.pull("stable")  # advances pw via restlessness
     _, info_pw = bandit.pull("pw")
     assert info_pw["p"] == 0.9
+
+
+def test_bandit_history_tracks_selected_arms():
+    drifting = DriftingGaussianArm(mean=0.0, std=1.0, drift_std=0.5, name="dg")
+    stationary = BernoulliArm(1.0, name="stable")
+    bandit = Bandit(
+        [drifting, stationary],
+        seed=0,
+        restless=True,
+        tracked_arms=["dg"],
+    )
+    bandit.pull("stable")  # evolves drifting via restlessness
+    hist_dg = bandit.history("dg")
+    hist_stable = bandit.history("stable")
+    assert len(hist_dg) == 1
+    step, snapshot = hist_dg[0]
+    assert step == 1
+    assert "mean" in snapshot
+    assert hist_stable == ()
+
+
+def test_bandit_history_tracks_all_when_enabled():
+    pw = PiecewiseBernoulliArm(schedule=[(0, 0.1), (2, 0.9)], name="pw")
+    bandit = Bandit([pw], seed=1, tracked_arms="all")
+    bandit.pull("pw")
+    bandit.pull("pw")
+    bandit.pull("pw")
+    hist = bandit.history("pw")
+    assert len(hist) == 3
+    # Final snapshot reflects updated probability
+    assert hist[-1][1]["p"] == 0.9

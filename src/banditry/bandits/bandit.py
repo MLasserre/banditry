@@ -18,6 +18,7 @@ class Bandit:
         arms: Sequence[BaseArm],
         seed: Optional[int] = None,
         restless: bool = False,
+        tracked_arms: Optional[Sequence[Action]] = None,
     ):
         if not arms:
             raise ValueError("At least one arm is required.")
@@ -35,6 +36,15 @@ class Bandit:
         self._num_pulls = 0
         self._restless = restless
         self._step = 0
+        # History tracking is opt-in via tracked_arms. tracked_arms="all" tracks every arm.
+        if tracked_arms is None:
+            self._tracked_arm_indices: set[int] = set()
+        elif tracked_arms == "all":
+            self._tracked_arm_indices = set(range(len(self._arms)))
+        else:
+            resolved = {self._resolve_action(a) for a in tracked_arms}
+            self._tracked_arm_indices = resolved
+        self._history: Dict[int, List[tuple]] = {idx: [] for idx in self._tracked_arm_indices}
 
     @property
     def n_arms(self) -> int:
@@ -76,14 +86,21 @@ class Bandit:
         # Advance global time after sampling; evolution applies to future pulls
         self._step += 1
         if self._restless:
-            for arm in self._arms:
+            for idx, arm in enumerate(self._arms):
                 if not arm.is_stationary:
                     arm.evolve(self._rng, self._step)
+                    self._record_snapshot(idx)
         else:
             arm = self._arms[arm_index]
             if not arm.is_stationary:
                 arm.evolve(self._rng, self._step)
+                self._record_snapshot(arm_index)
         return reward, info
+
+    def history(self, action: Action):
+        """Return the recorded history for an arm (empty tuple if none)."""
+        idx = self._resolve_action(action)
+        return tuple(self._history.get(idx, ()))
 
     def __repr__(self) -> str:
         names = ", ".join(self._arm_names)
@@ -100,3 +117,11 @@ class Bandit:
         return int(action)
 
     # Bandits are immutable after construction: no add/remove
+
+    def _record_snapshot(self, arm_index: int) -> None:
+        if arm_index not in self._tracked_arm_indices:
+            return
+        snap = self._arms[arm_index].snapshot()
+        if snap is None:
+            return
+        self._history[arm_index].append((self._step, snap))
