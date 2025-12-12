@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from .._types import Action, Sample
@@ -44,10 +44,24 @@ class Bandit:
     def num_pulls(self) -> int:
         return self._num_pulls
 
+    @property
+    def arms(self) -> Tuple[BaseArm, ...]:
+        """Return a read-only view of the underlying arms."""
+        return tuple(self._arms)
+
+    @property
+    def arm_labels(self) -> Tuple[str, ...]:
+        """Return the labels assigned to each arm."""
+        return tuple(self._arm_labels)
+
     def arm_num_pulls(self, action: Action) -> int:
         """Return the number of pulls for a given arm (by index or label)."""
         arm_index = self._resolve_action(action)
         return self._arms[arm_index].num_pulls
+
+    def arm(self, action: Action) -> BaseArm:
+        """Return the arm referenced by index or label."""
+        return self._arms[self._resolve_action(action)]
 
     def pull(self, action: Action) -> Sample:
         """Sample reward/info from the chosen arm."""

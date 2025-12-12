@@ -8,6 +8,11 @@ def test_default_labels_are_assigned_and_unique():
     bandit = Bandit(arms, seed=0)
 
     assert bandit.n_arms == 2
+    assert list(bandit.arm_labels) == ["A", "arm1"]
+    assert bandit.arms[0] is arms[0]
+    assert bandit.arms[1] is arms[1]
+    assert bandit.arm("A") is arms[0]
+    assert bandit.arm(1) is arms[1]
     # Default labels come from positional naming
     reward0, info0 = bandit.pull(0)
     assert info0["arm_index"] == 0
