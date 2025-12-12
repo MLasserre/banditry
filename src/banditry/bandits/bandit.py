@@ -45,6 +45,8 @@ class Bandit:
             resolved = {self._resolve_action(a) for a in tracked_arms}
             self._tracked_arm_indices = resolved
         self._history: Dict[int, List[tuple]] = {idx: [] for idx in self._tracked_arm_indices}
+        for idx in self._tracked_arm_indices:
+            self._record_snapshot(idx)
 
     @property
     def n_arms(self) -> int:

@@ -119,10 +119,12 @@ def test_bandit_history_tracks_selected_arms():
     bandit.pull("stable")  # evolves drifting via restlessness
     hist_dg = bandit.history("dg")
     hist_stable = bandit.history("stable")
-    assert len(hist_dg) == 1
-    step, snapshot = hist_dg[0]
-    assert step == 1
-    assert "mean" in snapshot
+    assert len(hist_dg) == 2  # initial + after evolution
+    step0, snap0 = hist_dg[0]
+    step1, snap1 = hist_dg[1]
+    assert step0 == 0
+    assert step1 == 1
+    assert "mean" in snap0 and "mean" in snap1
     assert hist_stable == ()
 
 
@@ -133,6 +135,7 @@ def test_bandit_history_tracks_all_when_enabled():
     bandit.pull("pw")
     bandit.pull("pw")
     hist = bandit.history("pw")
-    assert len(hist) == 3
+    assert len(hist) == 4  # initial + after each pull
+    assert hist[0][0] == 0
     # Final snapshot reflects updated probability
     assert hist[-1][1]["p"] == 0.9
