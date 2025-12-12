@@ -6,7 +6,7 @@ from .._types import Reward, Sample
 
 class BaseArm(ABC):
     def __init__(self, name: Optional[str] = None):
-        # Name can be supplied by the user; otherwise stays None and the bandit will assign a label.
+        # Name can be supplied by the user; otherwise stays None and the bandit will assign one.
         self._name = name
         self._num_pulls = 0
 
