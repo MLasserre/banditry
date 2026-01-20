@@ -1,3 +1,4 @@
-from .epsilon_greedy_policy import EpsilonGreedyPolicy
+from .epsilon_greedy import EpsilonGreedyPolicy
+from .etc import ETCPolicy
 
-__all__ = ["EpsilonGreedyPolicy"]
+__all__ = ["EpsilonGreedyPolicy", "ETCPolicy"]

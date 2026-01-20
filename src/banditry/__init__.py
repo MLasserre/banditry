@@ -21,7 +21,8 @@ from .bandits.standard import (
     BetaBandit,
     PiecewiseBernoulliBandit,
 )
-from .policies.epsilon_greedy_policy import EpsilonGreedyPolicy
+from .policies.epsilon_greedy import EpsilonGreedyPolicy
+from .policies.etc import ETCPolicy
 
 __all__ = [
     "BaseArm",
@@ -44,4 +45,5 @@ __all__ = [
     "BetaBandit",
     "PiecewiseBernoulliBandit",
     "EpsilonGreedyPolicy",
+    "ETCPolicy",
 ]
