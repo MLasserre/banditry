@@ -23,6 +23,7 @@ from .bandits.standard import (
 )
 from .policies.epsilon_greedy import EpsilonGreedyPolicy
 from .policies.etc import ETCPolicy
+from .policies.ucb import UCBPolicy
 
 __all__ = [
     "BaseArm",
@@ -46,4 +47,5 @@ __all__ = [
     "PiecewiseBernoulliBandit",
     "EpsilonGreedyPolicy",
     "ETCPolicy",
+    "UCBPolicy"
 ]
