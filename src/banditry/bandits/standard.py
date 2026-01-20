@@ -24,7 +24,7 @@ class BernoulliBandit(Bandit):
         names: Optional[Sequence[str]] = None,
         seed: Optional[int] = None,
     ):
-        if not probs:
+        if probs is None or len(probs) == 0:
             raise ValueError("At least one probability is required.")
         if names is not None and len(names) != len(probs):
             raise ValueError(f"names must have length {len(probs)}, got {len(names)}")
@@ -45,7 +45,7 @@ class GaussianBandit(Bandit):
         names: Optional[Sequence[str]] = None,
         seed: Optional[int] = None,
     ):
-        if not means:
+        if means is None or len(means) == 0:
             raise ValueError("At least one mean is required.")
         if names is not None and len(names) != len(means):
             raise ValueError(f"names must have length {len(means)}, got {len(names)}")
@@ -79,7 +79,7 @@ class DriftingGaussianBandit(Bandit):
         restless: bool = False,
         tracked_arms: Optional[Sequence[Action]] = None,
     ):
-        if not means:
+        if means is None or len(means) == 0:
             raise ValueError("At least one mean is required.")
         if names is not None and len(names) != len(means):
             raise ValueError(f"names must have length {len(means)}, got {len(names)}")
@@ -118,7 +118,7 @@ class ExponentialBandit(Bandit):
         names: Optional[Sequence[str]] = None,
         seed: Optional[int] = None,
     ):
-        if not scales:
+        if scales is None or len(scales) == 0:
             raise ValueError("At least one scale is required.")
         if names is not None and len(names) != len(scales):
             raise ValueError(f"names must have length {len(scales)}, got {len(names)}")
@@ -138,7 +138,7 @@ class PoissonBandit(Bandit):
         names: Optional[Sequence[str]] = None,
         seed: Optional[int] = None,
     ):
-        if not rates:
+        if rates is None or len(rates) == 0:
             raise ValueError("At least one rate is required.")
         if names is not None and len(names) != len(rates):
             raise ValueError(f"names must have length {len(rates)}, got {len(names)}")
@@ -159,7 +159,7 @@ class UniformBandit(Bandit):
         names: Optional[Sequence[str]] = None,
         seed: Optional[int] = None,
     ):
-        if not lows or not highs or len(lows) != len(highs):
+        if lows is None or highs is None or len(lows) == 0 or len(highs) == 0 or len(lows) != len(highs):
             raise ValueError("lows and highs must be non-empty and of equal length.")
         if names is not None and len(names) != len(lows):
             raise ValueError(f"names must have length {len(lows)}, got {len(names)}")
@@ -180,7 +180,13 @@ class BetaBandit(Bandit):
         names: Optional[Sequence[str]] = None,
         seed: Optional[int] = None,
     ):
-        if not alphas or not betas or len(alphas) != len(betas):
+        if (
+            alphas is None
+            or betas is None
+            or len(alphas) == 0
+            or len(betas) == 0
+            or len(alphas) != len(betas)
+        ):
             raise ValueError("alphas and betas must be non-empty and of equal length.")
         if names is not None and len(names) != len(alphas):
             raise ValueError(f"names must have length {len(alphas)}, got {len(names)}")
@@ -202,7 +208,7 @@ class PiecewiseBernoulliBandit(Bandit):
         restless: bool = False,
         tracked_arms: Optional[Sequence[Action]] = None,
     ):
-        if not schedules:
+        if schedules is None or len(schedules) == 0:
             raise ValueError("At least one schedule is required.")
         if names is not None and len(names) != len(schedules):
             raise ValueError(f"names must have length {len(schedules)}, got {len(names)}")
