@@ -1,87 +1,71 @@
 import numpy as np
 
+from .base import BasePolicy
 
-class EpsilonGreedyPolicy:
+
+class EpsilonGreedyPolicy(BasePolicy):
     def __init__(self, bandit, epsilon: float = 0.1, debug: bool = False):
-        self.__epsilon = float(epsilon)  # Probability to explore
-        self.__bandit = bandit
-        self.__k = bandit.n_arms  # Number of actions
-        self.__cur_step = 0  # Current step
-        self.__um = lambda n: 1 / n  # Updating method (average sampling by default)
+        super().__init__(bandit)
+        self._epsilon = float(epsilon)  # Probability to explore
+        self._update_method = lambda n: 1 / n  # Updating method (average sampling by default)
 
-        self.__Q_1 = np.zeros(self.__k)  # Initial estimates of state-action values
-        self.__Q = self.__Q_1.copy()  # Estimates of state-action values
-        self.__N = np.zeros(self.__k)  # Number of times each action has been selected
+        self._initial_value_estimates = np.zeros(self._bandit.n_arms)
+        self._value_estimates = self._initial_value_estimates.copy()
 
-        self.__list_rewards = []
-        self.__list_actions = []
+        self._debug = debug
+        self._opt_act_taken = [] if debug else None
 
-        self.__debug = debug
-        self.__opt_act_taken = [] if debug else None
+    def _select_action(self):
+        is_greedy = np.random.uniform() > self._epsilon
+        return self._exploitation() if is_greedy else self._exploration()
 
-    def __select_action(self):
-        is_greedy = np.random.uniform() > self.__epsilon
-        return self.__exploitation() if is_greedy else self.__exploration()
-
-    def __exploitation(self):
+    def _exploitation(self):
         # Break ties randomly among max actions
-        max_value = np.max(self.__Q)
-        candidates = np.flatnonzero(self.__Q == max_value)
-        return int(np.random.choice(candidates))
+        candidates = self._find_best_arms(self._value_estimates)
+        return self._break_ties(candidates)
 
-    def __exploration(self):
-        return int(np.random.randint(0, self.__k))
+    def _exploration(self):
+        return int(np.random.randint(0, self._bandit.n_arms))
 
-    def __update_values(self, action, reward):
-        self.__N[action] = self.__N[action] + 1
-        self.__Q[action] += self.__um(self.__N[action]) * (reward - self.__Q[action])
+    def _update(self, action, reward):
+        self._action_counts[action] = self._action_counts[action] + 1
+        self._value_estimates[action] += self._update_method(self._action_counts[action]) * (
+            reward - self._value_estimates[action]
+        )
 
     def reset(self):
-        self.__cur_step = 0
-        self.__Q = self.__Q_1.copy()
-        self.__N = np.zeros(self.__k)
-        self.__list_actions.clear()
-        self.__list_rewards.clear()
-        if self.__debug:
-            self.__opt_act_taken.clear()
-
-    @property
-    def current_step(self):
-        return self.__cur_step
+        self._step = 0
+        self._value_estimates = self._initial_value_estimates.copy()
+        self._action_counts = np.zeros(self._bandit.n_arms)
+        self._action_history.clear()
+        self._reward_history.clear()
+        if self._debug:
+            self._opt_act_taken.clear()
 
     def info(self):
-        if not self.__debug:
-            raise ValueError(f"debug has been set to {self.__debug}.")
-        return self.__opt_act_taken, self.__list_rewards
+        if not self._debug:
+            raise ValueError(f"debug has been set to {self._debug}.")
+        return self._opt_act_taken, self._reward_history
 
-    def set_initial_values(self, Q):
-        if len(Q) != self.__k:
-            raise ValueError(f"Length mismatch: Q({len(Q)}) must be of size {self.__k}.")
-        self.__Q_1 = np.array(Q, dtype=float)
-        if self.__cur_step == 0:
-            self.__Q = self.__Q_1.copy()
+    def set_initial_values(self, initial_values):
+        if len(initial_values) != self._bandit.n_arms:
+            raise ValueError(f"Length mismatch: Q({len(initial_values)}) must be of size {self._bandit.n_arms}.")
+        self._initial_value_estimates = np.array(initial_values, dtype=float)
+        if self._step == 0:
+            self._value_estimates = self._initial_value_estimates.copy()
 
     def set_epsilon(self, epsilon):
         if epsilon < 0 or epsilon > 1:
             raise ValueError("Value must be between 0 and 1 (inclusive)")
-        self.__epsilon = float(epsilon)
+        self._epsilon = float(epsilon)
 
     def set_update_method(self, method):
         self.reset()
-        self.__um = method
+        self._update_method = method
 
-    def learn(self, n_step):
-        for _ in range(n_step):
-            action = self.__select_action()
-            reward, _ = self.__bandit.pull(action)
-            self.__update_values(action, reward)
-            self.__list_actions.append(action)
-            self.__list_rewards.append(reward)
-            self.__cur_step += 1
-
-            if self.__debug:
-                # Optional: log whether action matches bandit's known best if available
-                best = getattr(self.__bandit, "best_action", None)
-                self.__opt_act_taken.append(best is not None and action == best)
-
-        return self.__list_actions[-n_step:], self.__list_rewards[-n_step:]
+    def _record(self, action, reward):
+        super()._record(action, reward)
+        if self._debug:
+            # Optional: log whether action matches bandit's known best if available
+            best = getattr(self._bandit, "best_action", None)
+            self._opt_act_taken.append(best is not None and action == best)
