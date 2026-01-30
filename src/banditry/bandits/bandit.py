@@ -23,6 +23,7 @@ class Bandit:
         if not arms:
             raise ValueError("At least one arm is required.")
         self._arms: List[BaseArm] = list(arms)
+
         # Build per-bandit names without mutating arms; auto-name unnamed, reject duplicates
         self._arm_names: List[str] = []
         self._name_to_index: Dict[str, int] = {}
@@ -32,10 +33,12 @@ class Bandit:
                 raise ValueError(f"Duplicate arm name '{name}' at indices {self._name_to_index[name]} and {idx}")
             self._arm_names.append(name)
             self._name_to_index[name] = idx
+
         self._rng = np.random.default_rng(seed)
         self._num_pulls = 0
         self._restless = restless
         self._step = 0
+        
         # History tracking is opt-in via tracked_arms. tracked_arms="all" tracks every arm.
         if tracked_arms is None:
             self._tracked_arm_indices: set[int] = set()

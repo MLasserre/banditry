@@ -4,16 +4,13 @@ from .base import BasePolicy
 
 
 class EpsilonGreedyPolicy(BasePolicy):
-    def __init__(self, bandit, epsilon: float = 0.1, debug: bool = False):
+    def __init__(self, bandit, epsilon: float = 0.1):
         super().__init__(bandit)
         self._epsilon = float(epsilon)  # Probability to explore
         self._update_method = lambda n: 1 / n  # Updating method (average sampling by default)
 
         self._initial_value_estimates = np.zeros(self._bandit.n_arms)
         self._value_estimates = self._initial_value_estimates.copy()
-
-        self._debug = debug
-        self._opt_act_taken = [] if debug else None
 
     def _select_action(self):
         is_greedy = np.random.uniform() > self._epsilon
@@ -39,13 +36,6 @@ class EpsilonGreedyPolicy(BasePolicy):
         self._action_counts = np.zeros(self._bandit.n_arms)
         self._action_history.clear()
         self._reward_history.clear()
-        if self._debug:
-            self._opt_act_taken.clear()
-
-    def info(self):
-        if not self._debug:
-            raise ValueError(f"debug has been set to {self._debug}.")
-        return self._opt_act_taken, self._reward_history
 
     def set_initial_values(self, initial_values):
         if len(initial_values) != self._bandit.n_arms:
@@ -62,10 +52,3 @@ class EpsilonGreedyPolicy(BasePolicy):
     def set_update_method(self, method):
         self.reset()
         self._update_method = method
-
-    def _record(self, action, reward):
-        super()._record(action, reward)
-        if self._debug:
-            # Optional: log whether action matches bandit's known best if available
-            best = getattr(self._bandit, "best_action", None)
-            self._opt_act_taken.append(best is not None and action == best)
