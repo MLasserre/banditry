@@ -23,7 +23,3 @@ class ETCPolicy(BasePolicy):
 
     def _update(self, action, reward):
         self._incremental_update(action, reward)
-
-    def reset(self):
-        super().reset()
-        self._best_action = None

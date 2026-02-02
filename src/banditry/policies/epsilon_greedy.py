@@ -30,13 +30,6 @@ class EpsilonGreedyPolicy(BasePolicy):
             reward - self._value_estimates[action]
         )
 
-    def reset(self):
-        self._step = 0
-        self._value_estimates = self._initial_value_estimates.copy()
-        self._action_counts = np.zeros(self._bandit.n_arms)
-        self._action_history.clear()
-        self._reward_history.clear()
-
     def set_initial_values(self, initial_values):
         if len(initial_values) != self._bandit.n_arms:
             raise ValueError(f"Length mismatch: Q({len(initial_values)}) must be of size {self._bandit.n_arms}.")
@@ -50,5 +43,4 @@ class EpsilonGreedyPolicy(BasePolicy):
         self._epsilon = float(epsilon)
 
     def set_update_method(self, method):
-        self.reset()
         self._update_method = method

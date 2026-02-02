@@ -41,13 +41,6 @@ class BasePolicy(ABC):
     def _select_action(self):
         pass
 
-    def reset(self):
-        self._step = 0
-        self._value_estimates = np.zeros(self._bandit.n_arms)
-        self._action_counts = np.zeros(self._bandit.n_arms)
-        self._action_history.clear()
-        self._reward_history.clear()
-
     @property
     def step(self):
         return self._step
