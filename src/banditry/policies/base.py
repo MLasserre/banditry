@@ -1,18 +1,64 @@
 from abc import ABC, abstractmethod
+from typing import Dict, Optional, Sequence, Type
 
 import numpy as np
 
+from ..estimators import BaseEstimator, SampleMeanEstimator
+
 
 class BasePolicy(ABC):
-    def __init__(self, bandit):
+    def __init__(
+        self,
+        bandit,
+        initial_estimates: Optional[Sequence[float]] = None,
+        *,
+        estimator_cls: Type[BaseEstimator] = SampleMeanEstimator,
+        estimator_kwargs: Optional[Dict[str, object]] = None,
+    ):
         self._bandit = bandit
         self._step = 0
 
-        self._value_estimates = np.zeros(bandit.n_arms)
-        self._action_counts = np.zeros(bandit.n_arms)
+        self._estimator = self._build_estimator(
+            initial_estimates=initial_estimates,
+            estimator_cls=estimator_cls,
+            estimator_kwargs=estimator_kwargs,
+        )
 
         self._action_history = []
         self._reward_history = []
+
+    def _build_estimator(
+        self,
+        initial_estimates: Optional[Sequence[float]],
+        estimator_cls: Type[BaseEstimator],
+        estimator_kwargs: Optional[Dict[str, object]],
+    ) -> BaseEstimator:
+        if not isinstance(estimator_cls, type):
+            raise TypeError("estimator_cls must be an estimator class.")
+        if not issubclass(estimator_cls, BaseEstimator):
+            raise TypeError("estimator_cls must inherit from BaseEstimator.")
+
+        kwargs = {} if estimator_kwargs is None else dict(estimator_kwargs)
+        reserved_keys = {"size", "initial_estimates"}
+        overlapping_keys = reserved_keys.intersection(kwargs)
+        if overlapping_keys:
+            keys = ", ".join(sorted(overlapping_keys))
+            raise ValueError(
+                f"estimator_kwargs cannot contain reserved key(s): {keys}."
+            )
+
+        estimator = estimator_cls(
+            size=self._bandit.n_arms,
+            initial_estimates=initial_estimates,
+            **kwargs,
+        )
+
+        if estimator.size != self._bandit.n_arms:
+            raise ValueError(
+                "Estimator size mismatch: estimator size "
+                f"{estimator.size} != number of arms {self._bandit.n_arms}."
+            )
+        return estimator
 
     def _break_ties(self, candidates):
         """Break ties if multiple arms are optimal."""
@@ -27,15 +73,8 @@ class BasePolicy(ABC):
         self._action_history.append(action)
         self._reward_history.append(reward)
 
-    @abstractmethod
     def _update(self, action, reward):
-        pass
-
-    def _incremental_update(self, action, reward):
-        self._action_counts[action] += 1
-        self._value_estimates[action] += (
-            reward - self._value_estimates[action]
-        ) / self._action_counts[action]
+        self._estimator.update(action, reward)
 
     @abstractmethod
     def _select_action(self):
@@ -46,10 +85,22 @@ class BasePolicy(ABC):
         return self._step
 
     @property
+    def estimator(self) -> BaseEstimator:
+        return self._estimator
+
+    @property
+    def value_estimates(self) -> np.ndarray:
+        return self._estimator.estimates
+
+    @property
+    def action_counts(self) -> np.ndarray:
+        return self._estimator.counts
+
+    @property
     def action_history(self):
         return self._action_history
 
-    @property    
+    @property
     def reward_history(self):
         return self._reward_history
 
@@ -62,7 +113,7 @@ class BasePolicy(ABC):
             raise TypeError("n_step must be an int.")
         if n_step < 0:
             raise ValueError("n_step must be non-negative.")
-        
+
         for _ in range(n_step):
             action = self._select_action()
             reward, _ = self._bandit.pull(action)

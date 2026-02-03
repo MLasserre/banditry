@@ -17,9 +17,6 @@ class ETCPolicy(BasePolicy):
 
     def _exploitation(self):
         if self._best_action is None:
-            candidates = self._find_best_arms(self._value_estimates)
+            candidates = self._find_best_arms(self.value_estimates)
             self._best_action = self._break_ties(candidates)
         return self._best_action
-
-    def _update(self, action, reward):
-        self._incremental_update(action, reward)
