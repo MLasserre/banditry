@@ -9,7 +9,7 @@ class EWMeanEstimator(BaseEstimator):
     def __init__(
         self,
         size: int,
-        alpha: float,
+        alpha: float = 0.1,
         initial_estimates: Optional[Sequence[float]] = None,
     ):
         super().__init__(size=size, initial_estimates=initial_estimates)
