@@ -16,7 +16,7 @@ class EpsilonGreedyPolicy(BasePolicy):
         self,
         bandit,
         epsilon: float = 0.1,
-        initial_estimates: Optional[Sequence[float]] = None,
+        initial_estimates: Optional[Union[float, Sequence[float]]] = None,
         *,
         estimator: Union[str, Type[BaseEstimator]] = "sample_mean",
         estimator_kwargs: Optional[Dict[str, object]] = None,

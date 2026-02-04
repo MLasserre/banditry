@@ -1,6 +1,4 @@
-from typing import Optional, Sequence
-
-from .base import BaseEstimator
+from .base import BaseEstimator, InitialEstimates
 
 
 class EWMeanEstimator(BaseEstimator):
@@ -10,7 +8,7 @@ class EWMeanEstimator(BaseEstimator):
         self,
         size: int,
         alpha: float = 0.1,
-        initial_estimates: Optional[Sequence[float]] = None,
+        initial_estimates: InitialEstimates = None,
     ):
         super().__init__(size=size, initial_estimates=initial_estimates)
         if alpha <= 0 or alpha > 1:

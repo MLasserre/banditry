@@ -1,12 +1,10 @@
-from typing import Optional, Sequence
-
-from .base import BaseEstimator
+from .base import BaseEstimator, InitialEstimates
 
 
 class SampleMeanEstimator(BaseEstimator):
     """Online estimator using the incremental sample average."""
 
-    def __init__(self, size: int, initial_estimates: Optional[Sequence[float]] = None):
+    def __init__(self, size: int, initial_estimates: InitialEstimates = None):
         super().__init__(size=size, initial_estimates=initial_estimates)
 
     def update(self, index: int, sample: float) -> None:

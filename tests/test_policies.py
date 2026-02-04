@@ -38,6 +38,17 @@ def test_epsilon_greedy_supports_ewm_with_optimistic_initialization():
     assert policy.value_estimates[0] == pytest.approx(4.2)
 
 
+def test_epsilon_greedy_accepts_scalar_initial_estimate():
+    bandit = Bandit([BernoulliArm(1.0), BernoulliArm(0.0)], seed=0)
+    policy = EpsilonGreedyPolicy(
+        bandit,
+        epsilon=0.0,
+        initial_estimates=3.0,
+    )
+    assert policy.value_estimates[0] == pytest.approx(3.0)
+    assert policy.value_estimates[1] == pytest.approx(3.0)
+
+
 def test_epsilon_greedy_supports_custom_estimator_class():
     bandit = Bandit([BernoulliArm(1.0)], seed=0)
     policy = EpsilonGreedyPolicy(
