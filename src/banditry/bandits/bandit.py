@@ -16,9 +16,11 @@ class Bandit:
     def __init__(
         self,
         arms: Sequence[BaseArm],
-        seed: Optional[int] = None,
+        *,
         restless: bool = False,
         tracked_arms: Optional[Sequence[Action]] = None,
+        rng: Optional[np.random.Generator] = None,
+        seed: Optional[int] = None,
     ):
         if not arms:
             raise ValueError("At least one arm is required.")
@@ -34,7 +36,7 @@ class Bandit:
             self._arm_names.append(name)
             self._name_to_index[name] = idx
 
-        self._rng = np.random.default_rng(seed)
+        self._rng = self._build_rng(rng=rng, seed=seed)
         self._num_pulls = 0
         self._restless = restless
         self._step = 0
@@ -50,6 +52,19 @@ class Bandit:
         self._history: Dict[int, List[tuple]] = {idx: [] for idx in self._tracked_arm_indices}
         for idx in self._tracked_arm_indices:
             self._record_snapshot(idx)
+
+    def _build_rng(
+        self,
+        rng: Optional[np.random.Generator],
+        seed: Optional[int],
+    ) -> np.random.Generator:
+        if rng is not None and seed is not None:
+            raise ValueError("Provide either rng or seed, not both.")
+        if rng is not None:
+            if not isinstance(rng, np.random.Generator):
+                raise TypeError("rng must be a numpy.random.Generator instance.")
+            return rng
+        return np.random.default_rng(seed)
 
     @property
     def n_arms(self) -> int:

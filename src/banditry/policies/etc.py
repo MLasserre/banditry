@@ -1,9 +1,20 @@
+from typing import Optional
+
+import numpy as np
+
 from .base import BasePolicy
 
 
 class ETCPolicy(BasePolicy):
-    def __init__(self, bandit, m: int):
-        super().__init__(bandit)
+    def __init__(
+        self,
+        bandit,
+        m: int,
+        *,
+        rng: Optional[np.random.Generator] = None,
+        seed: Optional[int] = None,
+    ):
+        super().__init__(bandit, rng=rng, seed=seed)
         self._m = m
         self._best_action = None
 

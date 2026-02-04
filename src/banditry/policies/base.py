@@ -15,9 +15,12 @@ class BasePolicy(ABC):
         *,
         estimator_cls: Type[BaseEstimator] = SampleMeanEstimator,
         estimator_kwargs: Optional[Dict[str, object]] = None,
+        rng: Optional[np.random.Generator] = None,
+        seed: Optional[int] = None,
     ):
         self._bandit = bandit
         self._step = 0
+        self._rng = self._build_rng(rng=rng, seed=seed)
 
         self._estimator = self._build_estimator(
             initial_estimates=initial_estimates,
@@ -27,6 +30,19 @@ class BasePolicy(ABC):
 
         self._action_history = []
         self._reward_history = []
+
+    def _build_rng(
+        self,
+        rng: Optional[np.random.Generator],
+        seed: Optional[int],
+    ) -> np.random.Generator:
+        if rng is not None and seed is not None:
+            raise ValueError("Provide either rng or seed, not both.")
+        if rng is not None:
+            if not isinstance(rng, np.random.Generator):
+                raise TypeError("rng must be a numpy.random.Generator instance.")
+            return rng
+        return np.random.default_rng(seed)
 
     def _build_estimator(
         self,
@@ -65,7 +81,7 @@ class BasePolicy(ABC):
         """Break ties if multiple arms are optimal."""
         if len(candidates) == 1:
             return int(candidates[0])
-        return int(np.random.choice(candidates))
+        return int(self._rng.choice(candidates))
 
     def _find_best_arms(self, values):
         return np.flatnonzero(values == np.max(values))

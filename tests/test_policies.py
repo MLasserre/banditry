@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from banditry import Bandit, BernoulliArm
@@ -99,3 +100,34 @@ def test_ucb_delta_must_be_between_zero_and_one():
         UCBPolicy(bandit, delta=0.0)
     with pytest.raises(ValueError):
         UCBPolicy(bandit, delta=1.0)
+
+
+def test_policy_rejects_rng_and_seed_together():
+    bandit = Bandit([BernoulliArm(1.0)], seed=0)
+    with pytest.raises(ValueError, match="either rng or seed"):
+        EpsilonGreedyPolicy(
+            bandit,
+            epsilon=1.0,
+            rng=np.random.default_rng(0),
+            seed=0,
+        )
+
+
+def test_epsilon_greedy_seed_makes_action_sequence_reproducible():
+    bandit_1 = Bandit([BernoulliArm(0.0) for _ in range(4)], seed=0)
+    bandit_2 = Bandit([BernoulliArm(0.0) for _ in range(4)], seed=0)
+    policy_1 = EpsilonGreedyPolicy(bandit_1, epsilon=1.0, seed=123)
+    policy_2 = EpsilonGreedyPolicy(bandit_2, epsilon=1.0, seed=123)
+    actions_1, _ = policy_1.learn(20)
+    actions_2, _ = policy_2.learn(20)
+    assert actions_1 == actions_2
+
+
+def test_ucb_seed_makes_tie_breaking_reproducible():
+    bandit_1 = Bandit([BernoulliArm(0.0), BernoulliArm(0.0)], seed=0)
+    bandit_2 = Bandit([BernoulliArm(0.0), BernoulliArm(0.0)], seed=0)
+    policy_1 = UCBPolicy(bandit_1, delta=0.1, seed=99)
+    policy_2 = UCBPolicy(bandit_2, delta=0.1, seed=99)
+    actions_1, _ = policy_1.learn(12)
+    actions_2, _ = policy_2.learn(12)
+    assert actions_1 == actions_2

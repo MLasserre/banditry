@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from banditry.bandits import Bandit, BernoulliArm, GaussianArm, DriftingGaussianArm, PiecewiseBernoulliArm
@@ -139,3 +140,18 @@ def test_bandit_history_tracks_all_when_enabled():
     assert hist[0][0] == 0
     # Final snapshot reflects updated probability
     assert hist[-1][1]["p"] == 0.9
+
+
+def test_bandit_rejects_rng_and_seed_together():
+    with pytest.raises(ValueError, match="either rng or seed"):
+        Bandit([BernoulliArm(0.5)], rng=np.random.default_rng(0), seed=0)
+
+
+def test_bandit_rng_reproducibility():
+    rng1 = np.random.default_rng(123)
+    rng2 = np.random.default_rng(123)
+    bandit_1 = Bandit([BernoulliArm(0.5)], rng=rng1)
+    bandit_2 = Bandit([BernoulliArm(0.5)], rng=rng2)
+    rewards_1 = [bandit_1.pull(0)[0] for _ in range(10)]
+    rewards_2 = [bandit_2.pull(0)[0] for _ in range(10)]
+    assert rewards_1 == rewards_2

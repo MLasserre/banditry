@@ -21,6 +21,8 @@ class EpsilonGreedyPolicy(BasePolicy):
         *,
         estimator: Union[str, Type[BaseEstimator]] = "sample_mean",
         estimator_kwargs: Optional[Dict[str, object]] = None,
+        rng: Optional[np.random.Generator] = None,
+        seed: Optional[int] = None,
     ):
         estimator_cls = self._resolve_estimator_class(estimator)
         super().__init__(
@@ -28,6 +30,8 @@ class EpsilonGreedyPolicy(BasePolicy):
             initial_estimates=initial_estimates,
             estimator_cls=estimator_cls,
             estimator_kwargs=estimator_kwargs,
+            rng=rng,
+            seed=seed,
         )
         self.set_epsilon(epsilon)
 
@@ -54,7 +58,7 @@ class EpsilonGreedyPolicy(BasePolicy):
         return estimator
 
     def _select_action(self):
-        is_greedy = np.random.uniform() > self._epsilon
+        is_greedy = self._rng.random() > self._epsilon
         return self._exploitation() if is_greedy else self._exploration()
 
     def _exploitation(self):
@@ -63,7 +67,7 @@ class EpsilonGreedyPolicy(BasePolicy):
         return self._break_ties(candidates)
 
     def _exploration(self):
-        return int(np.random.randint(0, self._bandit.n_arms))
+        return int(self._rng.integers(0, self._bandit.n_arms))
 
     def set_epsilon(self, epsilon):
         if epsilon < 0 or epsilon > 1:

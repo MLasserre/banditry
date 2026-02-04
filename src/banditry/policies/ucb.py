@@ -1,11 +1,20 @@
+from typing import Optional
+
 import numpy as np
 
 from .base import BasePolicy
 
 
 class UCBPolicy(BasePolicy):
-    def __init__(self, bandit, delta: float):
-        super().__init__(bandit)
+    def __init__(
+        self,
+        bandit,
+        delta: float,
+        *,
+        rng: Optional[np.random.Generator] = None,
+        seed: Optional[int] = None,
+    ):
+        super().__init__(bandit, rng=rng, seed=seed)
         if delta <= 0 or delta >= 1:
             raise ValueError("delta must be in (0, 1).")
         self._delta = float(delta)

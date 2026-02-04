@@ -1,4 +1,5 @@
 from typing import Optional, Sequence, Union, List, Tuple
+import numpy as np
 from .._types import Action
 
 from .arms import (
@@ -22,6 +23,8 @@ class BernoulliBandit(Bandit):
         self,
         probs: Sequence[float],
         names: Optional[Sequence[str]] = None,
+        *,
+        rng: Optional[np.random.Generator] = None,
         seed: Optional[int] = None,
     ):
         if probs is None or len(probs) == 0:
@@ -32,7 +35,7 @@ class BernoulliBandit(Bandit):
         for idx, p in enumerate(probs):
             name = names[idx] if names is not None else None
             arms.append(BernoulliArm(p, name=name))
-        super().__init__(arms, seed=seed)
+        super().__init__(arms, rng=rng, seed=seed)
 
 
 class GaussianBandit(Bandit):
@@ -43,6 +46,8 @@ class GaussianBandit(Bandit):
         means: Sequence[float],
         stds: Optional[Union[float, Sequence[float]]] = 1.0,
         names: Optional[Sequence[str]] = None,
+        *,
+        rng: Optional[np.random.Generator] = None,
         seed: Optional[int] = None,
     ):
         if means is None or len(means) == 0:
@@ -63,7 +68,7 @@ class GaussianBandit(Bandit):
         for idx, (mu, sigma) in enumerate(zip(means, std_list)):
             name = names[idx] if names is not None else None
             arms.append(GaussianArm(mu, sigma, name=name))
-        super().__init__(arms, seed=seed)
+        super().__init__(arms, rng=rng, seed=seed)
 
 
 class DriftingGaussianBandit(Bandit):
@@ -75,9 +80,11 @@ class DriftingGaussianBandit(Bandit):
         stds: Optional[Union[float, Sequence[float]]] = 1.0,
         drift_stds: Optional[Union[float, Sequence[float]]] = 0.1,
         names: Optional[Sequence[str]] = None,
-        seed: Optional[int] = None,
+        *,
         restless: bool = False,
         tracked_arms: Optional[Sequence[Action]] = None,
+        rng: Optional[np.random.Generator] = None,
+        seed: Optional[int] = None,
     ):
         if means is None or len(means) == 0:
             raise ValueError("At least one mean is required.")
@@ -106,7 +113,13 @@ class DriftingGaussianBandit(Bandit):
         for idx, (mu, sigma, drift) in enumerate(zip(means, std_list, drift_list)):
             name = names[idx] if names is not None else None
             arms.append(DriftingGaussianArm(mu, sigma, drift, name=name))
-        super().__init__(arms, seed=seed, restless=restless, tracked_arms=tracked_arms)
+        super().__init__(
+            arms,
+            rng=rng,
+            seed=seed,
+            restless=restless,
+            tracked_arms=tracked_arms,
+        )
 
 
 class ExponentialBandit(Bandit):
@@ -116,6 +129,8 @@ class ExponentialBandit(Bandit):
         self,
         scales: Sequence[float],
         names: Optional[Sequence[str]] = None,
+        *,
+        rng: Optional[np.random.Generator] = None,
         seed: Optional[int] = None,
     ):
         if scales is None or len(scales) == 0:
@@ -126,7 +141,7 @@ class ExponentialBandit(Bandit):
         for idx, s in enumerate(scales):
             name = names[idx] if names is not None else None
             arms.append(ExponentialArm(s, name=name))
-        super().__init__(arms, seed=seed)
+        super().__init__(arms, rng=rng, seed=seed)
 
 
 class PoissonBandit(Bandit):
@@ -136,6 +151,8 @@ class PoissonBandit(Bandit):
         self,
         rates: Sequence[float],
         names: Optional[Sequence[str]] = None,
+        *,
+        rng: Optional[np.random.Generator] = None,
         seed: Optional[int] = None,
     ):
         if rates is None or len(rates) == 0:
@@ -146,7 +163,7 @@ class PoissonBandit(Bandit):
         for idx, lam in enumerate(rates):
             name = names[idx] if names is not None else None
             arms.append(PoissonArm(lam, name=name))
-        super().__init__(arms, seed=seed)
+        super().__init__(arms, rng=rng, seed=seed)
 
 
 class UniformBandit(Bandit):
@@ -157,6 +174,8 @@ class UniformBandit(Bandit):
         lows: Sequence[float],
         highs: Sequence[float],
         names: Optional[Sequence[str]] = None,
+        *,
+        rng: Optional[np.random.Generator] = None,
         seed: Optional[int] = None,
     ):
         if lows is None or highs is None or len(lows) == 0 or len(highs) == 0 or len(lows) != len(highs):
@@ -167,7 +186,7 @@ class UniformBandit(Bandit):
         for idx, (lo, hi) in enumerate(zip(lows, highs)):
             name = names[idx] if names is not None else None
             arms.append(UniformArm(lo, hi, name=name))
-        super().__init__(arms, seed=seed)
+        super().__init__(arms, rng=rng, seed=seed)
 
 
 class BetaBandit(Bandit):
@@ -178,6 +197,8 @@ class BetaBandit(Bandit):
         alphas: Sequence[float],
         betas: Sequence[float],
         names: Optional[Sequence[str]] = None,
+        *,
+        rng: Optional[np.random.Generator] = None,
         seed: Optional[int] = None,
     ):
         if (
@@ -194,7 +215,7 @@ class BetaBandit(Bandit):
         for idx, (a, b) in enumerate(zip(alphas, betas)):
             name = names[idx] if names is not None else None
             arms.append(BetaArm(a, b, name=name))
-        super().__init__(arms, seed=seed)
+        super().__init__(arms, rng=rng, seed=seed)
 
 
 class PiecewiseBernoulliBandit(Bandit):
@@ -204,9 +225,11 @@ class PiecewiseBernoulliBandit(Bandit):
         self,
         schedules: Sequence[Sequence[Tuple[int, float]]],
         names: Optional[Sequence[str]] = None,
-        seed: Optional[int] = None,
+        *,
         restless: bool = False,
         tracked_arms: Optional[Sequence[Action]] = None,
+        rng: Optional[np.random.Generator] = None,
+        seed: Optional[int] = None,
     ):
         if schedules is None or len(schedules) == 0:
             raise ValueError("At least one schedule is required.")
@@ -216,4 +239,10 @@ class PiecewiseBernoulliBandit(Bandit):
         for idx, schedule in enumerate(schedules):
             name = names[idx] if names is not None else None
             arms.append(PiecewiseBernoulliArm(schedule=schedule, name=name))
-        super().__init__(arms, seed=seed, restless=restless, tracked_arms=tracked_arms)
+        super().__init__(
+            arms,
+            rng=rng,
+            seed=seed,
+            restless=restless,
+            tracked_arms=tracked_arms,
+        )

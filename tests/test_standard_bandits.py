@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from banditry.bandits import (
@@ -98,3 +99,16 @@ def test_piecewise_bernoulli_bandit_schedule():
     assert info2["p"] == 0.1
     _, info3 = bandit.pull("pw")
     assert info3["p"] == 0.9
+
+
+def test_standard_bandit_rejects_rng_and_seed_together():
+    with pytest.raises(ValueError, match="either rng or seed"):
+        BernoulliBandit([0.5], rng=np.random.default_rng(0), seed=0)
+
+
+def test_standard_bandit_accepts_rng_for_reproducibility():
+    bandit_1 = BernoulliBandit([0.5], rng=np.random.default_rng(123))
+    bandit_2 = BernoulliBandit([0.5], rng=np.random.default_rng(123))
+    rewards_1 = [bandit_1.pull(0)[0] for _ in range(8)]
+    rewards_2 = [bandit_2.pull(0)[0] for _ in range(8)]
+    assert rewards_1 == rewards_2
