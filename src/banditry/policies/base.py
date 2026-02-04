@@ -97,6 +97,12 @@ class BasePolicy(ABC):
     def action_counts(self) -> np.ndarray:
         return self._estimator.counts
 
+    def value_estimate_at(self, action: int) -> float:
+        return self._estimator.estimate_at(action)
+
+    def action_count_at(self, action: int) -> int:
+        return self._estimator.count_at(action)
+
     @property
     def action_history(self):
         return self._action_history

@@ -49,6 +49,14 @@ def test_epsilon_greedy_accepts_scalar_initial_estimate():
     assert policy.value_estimates[1] == pytest.approx(3.0)
 
 
+def test_policy_per_arm_accessors_delegate_to_estimator():
+    bandit = Bandit([BernoulliArm(1.0)], seed=0)
+    policy = EpsilonGreedyPolicy(bandit, epsilon=0.0)
+    policy.learn(1)
+    assert policy.action_count_at(0) == 1
+    assert policy.value_estimate_at(0) == pytest.approx(1.0)
+
+
 def test_epsilon_greedy_supports_custom_estimator_class():
     bandit = Bandit([BernoulliArm(1.0)], seed=0)
     policy = EpsilonGreedyPolicy(
