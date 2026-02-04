@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence, Union
-
 import numpy as np
 
-InitialEstimates = Optional[Union[float, Sequence[float]]]
+from .._types import InitialEstimates
 
 
 class BaseEstimator(ABC):

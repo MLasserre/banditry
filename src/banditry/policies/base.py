@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Sequence, Type, Union
+from typing import Dict, Optional, Type
 
 import numpy as np
 
+from .._types import InitialEstimates
 from ..estimators import BaseEstimator, SampleMeanEstimator
 
 
@@ -10,7 +11,7 @@ class BasePolicy(ABC):
     def __init__(
         self,
         bandit,
-        initial_estimates: Optional[Union[float, Sequence[float]]] = None,
+        initial_estimates: InitialEstimates = None,
         *,
         estimator_cls: Type[BaseEstimator] = SampleMeanEstimator,
         estimator_kwargs: Optional[Dict[str, object]] = None,
@@ -29,7 +30,7 @@ class BasePolicy(ABC):
 
     def _build_estimator(
         self,
-        initial_estimates: Optional[Union[float, Sequence[float]]],
+        initial_estimates: InitialEstimates,
         estimator_cls: Type[BaseEstimator],
         estimator_kwargs: Optional[Dict[str, object]],
     ) -> BaseEstimator:

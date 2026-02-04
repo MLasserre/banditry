@@ -1,4 +1,5 @@
-from .base import BaseEstimator, InitialEstimates
+from .._types import InitialEstimates
+from .base import BaseEstimator
 
 
 class SampleMeanEstimator(BaseEstimator):

@@ -1,7 +1,8 @@
-from typing import Dict, Optional, Sequence, Type, Union
+from typing import Dict, Optional, Type, Union
 
 import numpy as np
 
+from .._types import InitialEstimates
 from ..estimators import BaseEstimator, EWMeanEstimator, SampleMeanEstimator
 from .base import BasePolicy
 
@@ -16,7 +17,7 @@ class EpsilonGreedyPolicy(BasePolicy):
         self,
         bandit,
         epsilon: float = 0.1,
-        initial_estimates: Optional[Union[float, Sequence[float]]] = None,
+        initial_estimates: InitialEstimates = None,
         *,
         estimator: Union[str, Type[BaseEstimator]] = "sample_mean",
         estimator_kwargs: Optional[Dict[str, object]] = None,
