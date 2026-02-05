@@ -21,8 +21,15 @@ from .bandits.standard import (
     BetaBandit,
     PiecewiseBernoulliBandit,
 )
+from . import schedules
 from . import estimators
 from .estimators import BaseEstimator, SampleMeanEstimator, EWMeanEstimator
+from .schedules import (
+    BaseSchedule,
+    ConstantSchedule,
+    LinearDecaySchedule,
+    ExponentialDecaySchedule,
+)
 from .policies.base import BasePolicy
 from .policies.epsilon_greedy import EpsilonGreedyPolicy
 from .policies.etc import ETCPolicy
@@ -48,10 +55,15 @@ __all__ = [
     "UniformBandit",
     "BetaBandit",
     "PiecewiseBernoulliBandit",
+    "schedules",
     "estimators",
     "BaseEstimator",
     "SampleMeanEstimator",
     "EWMeanEstimator",
+    "BaseSchedule",
+    "ConstantSchedule",
+    "LinearDecaySchedule",
+    "ExponentialDecaySchedule",
     "BasePolicy",
     "EpsilonGreedyPolicy",
     "ETCPolicy",
