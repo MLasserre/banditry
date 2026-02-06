@@ -4,6 +4,12 @@ import pytest
 from banditry import Bandit, BernoulliArm
 from banditry.estimators import BaseEstimator, EWMeanEstimator, SampleMeanEstimator
 from banditry.policies import ETCPolicy, EpsilonGreedyPolicy, UCBPolicy
+from banditry.schedules import (
+    BaseSchedule,
+    ConstantSchedule,
+    ExponentialDecaySchedule,
+    LinearDecaySchedule,
+)
 
 
 class ConstantStepEstimator(BaseEstimator):
@@ -121,6 +127,71 @@ def test_epsilon_greedy_seed_makes_action_sequence_reproducible():
     actions_1, _ = policy_1.learn(20)
     actions_2, _ = policy_2.learn(20)
     assert actions_1 == actions_2
+
+
+def test_epsilon_greedy_constant_schedule_keeps_epsilon():
+    bandit = Bandit([BernoulliArm(0.0)], seed=0)
+    policy = EpsilonGreedyPolicy(
+        bandit,
+        epsilon=ConstantSchedule(initial_value=0.3),
+    )
+    policy.learn(10)
+    assert policy.epsilon == pytest.approx(0.3)
+
+
+def test_epsilon_greedy_linear_schedule_reaches_min():
+    bandit = Bandit([BernoulliArm(0.0)], seed=0)
+    policy = EpsilonGreedyPolicy(
+        bandit,
+        epsilon=LinearDecaySchedule(
+            initial_value=1.0,
+            min_value=0.2,
+            decay_steps=4,
+        ),
+        seed=123,
+    )
+    policy.learn(4)
+    assert policy.epsilon == pytest.approx(0.2)
+    policy.learn(4)
+    assert policy.epsilon == pytest.approx(0.2)
+
+
+def test_epsilon_greedy_exponential_schedule_decays_with_floor():
+    bandit = Bandit([BernoulliArm(0.0)], seed=0)
+    policy = EpsilonGreedyPolicy(
+        bandit,
+        epsilon=ExponentialDecaySchedule(
+            initial_value=1.0,
+            min_value=0.1,
+            decay=0.5,
+        ),
+        seed=123,
+    )
+    policy.learn(1)
+    assert policy.epsilon == pytest.approx(0.5)
+    policy.learn(1)
+    assert policy.epsilon == pytest.approx(0.25)
+    policy.learn(3)
+    assert policy.epsilon == pytest.approx(0.1)
+
+
+def test_epsilon_greedy_schedule_validation():
+    bandit = Bandit([BernoulliArm(0.0)], seed=0)
+    with pytest.raises(TypeError, match="BaseSchedule"):
+        EpsilonGreedyPolicy(bandit, epsilon="linear")
+
+    with pytest.raises(ValueError, match="decay_steps"):
+        LinearDecaySchedule(initial_value=1.0, decay_steps=0)
+
+    with pytest.raises(ValueError, match="decay"):
+        ExponentialDecaySchedule(initial_value=1.0, decay=0.0)
+
+    class InvalidSchedule(BaseSchedule):
+        def value(self, step: int) -> float:
+            return 1.5
+
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        EpsilonGreedyPolicy(bandit, epsilon=InvalidSchedule())
 
 
 def test_ucb_seed_makes_tie_breaking_reproducible():
